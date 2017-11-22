@@ -1,14 +1,14 @@
 from setuptools import setup
 
 setup(
-    name = '...',
+    name = 'CARTWriter',
     version = '0.1.0',
-    description = '...',
-    url = '...',
-    author = 'Marton Munz',
-    author_email = 'munzmarci@gmail.com',
+    description = 'A simple tool that outputs CARTs data in various formats',
+    url = 'https://github.com/RahmanTeamDevelopment/CARTWriter',
+    author = 'RahmanTeam',
+    author_email = 'rahmanlab@icr.ac.uk',
     license = 'MIT',
-    packages=[ ],
-    scripts=[ ],
+    packages=["cartwriter"],
+    scripts=["bin/CARTWriter.py", "bin/cartwriter"],
     zip_safe=False
 )
