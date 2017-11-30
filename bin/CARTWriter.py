@@ -5,7 +5,7 @@ from optparse import OptionParser
 from cartwriter.main import main
 
 # Version
-ver = '0.1.0'
+ver = '0.2.0'
 
 # Command line argument parsing
 descr = 'CARTWriter v'+ver
@@ -17,6 +17,8 @@ parser.add_option('-g', default=None, dest='hgnc', action='store', help="HGNC ID
 parser.add_option('-o', default='output', dest='output', action='store', help="Output file name prefix [default value: %default]")
 parser.add_option('-w', default=False, dest='gbk', action='store_true', help="Write GenBank (GBK) output [default value: %default]")
 parser.add_option('-r', default=None, dest='ref', action='store', help="Reference genome file")
+parser.add_option('-s', default=None, dest='symbols', action='store', help="Txt file for specifying gene symbols for missing HGNC IDs")
+
 (options, args) = parser.parse_args()
 
 # Welcome message

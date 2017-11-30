@@ -377,3 +377,43 @@ def reverse_complement(dna_seq):
     for base in dna_seq[::-1]:
         ret += complement[base]
     return ret
+
+
+def check_for_missing_hgnc_ids(fn, db_ncbi, db_ucsc, genes_symbols, symbols):
+    not_found = []
+    for line in open(fn):
+        line = line.strip()
+        if line=='' or line.startswith('#'):
+            continue
+        nm = line.split()[1]
+
+        if db_ncbi.contains(nm):
+            transcript = db_ncbi.by_id(nm)
+        elif db_ucsc.contains(nm):
+            transcript = db_ucsc.by_id(nm)
+        else:
+            continue
+
+        if transcript.hgnc_id not in genes_symbols and transcript.hgnc_id not in symbols:
+            not_found.append(transcript.hgnc_id)
+
+    if len(not_found) > 0:
+        print 'Oops. The following {} HGNC ID{} not found in HGNC BioMart file:'.format(len(not_found), ' is' if len(not_found) == 1 else 's are')
+        for x in not_found:
+            print '- {}'.format(x)
+        print 'Use command line option -s to supply a txt file providing gene {}.'.format('symbol for this HGNC ID' if len(not_found) == 1 else 'symbols for these HGNC IDs')
+        print 'The txt file must have two columns: HGNC ID and gene symbol.\n'
+        print 'No outputs generated.\n'
+        print '=' * 100 + '\n'
+        quit()
+
+
+def read_gene_symbol_file(fn):
+    ret = {}
+    for line in open(fn):
+        line = line.strip()
+        if line=='' or line.startswith('#'):
+            continue
+        cols = line.split()
+        ret[cols[0]] = cols[1]
+    return ret

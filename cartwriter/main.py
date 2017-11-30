@@ -68,6 +68,14 @@ def main(ver, options):
     db_ucsc_excluded = read_excluded_list(options.ucsc[:-3] + '_excluded.txt')
     print 'Transcript database (UCSC mapping): {} -> {} transcripts\n'.format(options.ucsc, len(db_ucsc._data))
 
+    if options.symbols is not None:
+        symbols = helper.read_gene_symbol_file(options.symbols)
+    else:
+        symbols = {}
+
+    # Check for missing HGNC IDs
+    helper.check_for_missing_hgnc_ids(options.input, db_ncbi, db_ucsc, genes_symbols, symbols)
+
     # Initializing output files
     out_gff = open(options.output + '.gff', 'w')
     out_gff.write('##gff-version 3\n')
@@ -123,6 +131,8 @@ def main(ver, options):
 
         if transcript.hgnc_id in genes_symbols:
             transcript.gene_symbol = genes_symbols[transcript.hgnc_id]
+        elif transcript.hgnc_id in symbols:
+            transcript.gene_symbol = symbols[transcript.hgnc_id]
         else:
             transcript.gene_symbol = '?'
             print '!WARNING: {} ({}) not found in HGNC BioMart file. Gene symbol set to \"?\".'.format(transcript.hgnc_id, cart_id)
