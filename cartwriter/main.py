@@ -2,7 +2,10 @@
 from tgmi.transcripts import TranscriptDB
 import helper
 import reference
-import gzip
+import os
+import sys
+import shutil
+import pysam
 
 
 def number_of_input_carts(fn):
@@ -48,6 +51,13 @@ def main(ver, options):
     genes_symbols = read_gene_symbol_file(options.hgnc)
     print 'HGNC BioMart file: {}'.format(options.hgnc)
 
+    # Reading additional gene symbol file
+    if options.symbols is not None:
+        symbols = helper.read_gene_symbol_file(options.symbols)
+        print 'Txt file supplying missing gene symbols: {}'.format(options.symbols)
+    else:
+        symbols = {}
+
     # Initializing reference sequence reader
     ref = reference.Reference(options.ref)
     print 'Reference genome file: {}\n'.format(options.ref)
@@ -68,11 +78,6 @@ def main(ver, options):
     db_ucsc_excluded = read_excluded_list(options.ucsc[:-3] + '_excluded.txt')
     print 'Transcript database (UCSC mapping): {} -> {} transcripts\n'.format(options.ucsc, len(db_ucsc._data))
 
-    if options.symbols is not None:
-        symbols = helper.read_gene_symbol_file(options.symbols)
-    else:
-        symbols = {}
-
     # Check for missing HGNC IDs
     helper.check_for_missing_hgnc_ids(options.input, db_ncbi, db_ucsc, genes_symbols, symbols)
 
@@ -85,11 +90,22 @@ def main(ver, options):
     out_missing.write('#CARTID\trelated_NM\treason_NCBI_db\treason_UCSC_db\n')
     out_genepred = open(options.output + '.gp', 'w')
     out_fasta = open(options.output + '.fa', 'w')
+
+    # Initializing output files required by Annovar
+    if options.annovar:
+        out_genepred_annovar = open('{}_refGene.txt'.format(options.output), 'w')
+        out_fasta_annovar = open('{}_refGeneMrna.fa'.format(options.output), 'w')
+
+    # Initializing GBK ourput
+    gbk_dir = '{}_gbk'.format(options.output)
     if options.gbk:
-        out_gbk = gzip.open(options.output + '.gbk.gz', 'w')
+        if os.path.exists(gbk_dir):
+            shutil.rmtree(gbk_dir)
+        os.makedirs(gbk_dir)
 
     # Iterating through input records
-    print 'Processing data ... '
+    sys.stdout.write('Processing data ... ')
+    sys.stdout.flush()
     counter = 0
     counter_ncbi = 0
     counter_ucsc = 0
@@ -134,8 +150,9 @@ def main(ver, options):
         elif transcript.hgnc_id in symbols:
             transcript.gene_symbol = symbols[transcript.hgnc_id]
         else:
-            transcript.gene_symbol = '?'
-            print '!WARNING: {} ({}) not found in HGNC BioMart file. Gene symbol set to \"?\".'.format(transcript.hgnc_id, cart_id)
+            # This should never happen
+            print '\nError 1\n'
+            quit()
 
         transcript.hgnc_id = transcript.hgnc_id[5:]
 
@@ -148,12 +165,17 @@ def main(ver, options):
         # Writing to gp file
         helper.output_genepred(transcript, out_genepred)
 
-        # Writing to gbk.gz file
+        # Writing to gbk output
         if options.gbk:
-            helper.output_gbk(transcript, ref, out_gbk)
+            helper.output_gbk(transcript, ref, gbk_dir)
 
         # Writing to fasta file
         helper.output_fasta(transcript, out_fasta, ref)
+
+        # Writing annovar files
+        if options.annovar:
+            helper.output_genepred(transcript, out_genepred_annovar)
+            helper.output_fasta_annovar(transcript, out_fasta_annovar, ref)
 
         counter += 1
 
@@ -165,22 +187,35 @@ def main(ver, options):
     out_source.close()
     out_missing.close()
     out_fasta.close()
+    pysam.faidx(options.output + '.fa')
     out_genepred.close()
+    if options.annovar:
+        out_genepred_annovar.close()
+        out_fasta_annovar.close()
+        pysam.faidx('{}_refGeneMrna.fa'.format(options.output))
     if options.gbk:
-        out_gbk.close()
+        shutil.make_archive('{}_gbk'.format(options.output), "zip", './', gbk_dir)
+        shutil.rmtree(gbk_dir)
 
     # Printing out summary info
-    print '... done'
+    print 'done'
     print '\nSummary:'
     print '{} CARTs added to output database ({} with NCBI, {} with UCSC mapping)'.format(counter, counter_ncbi, counter_ucsc)
     print '{} CARTs missing from output database'.format(counter_missing)
 
     print '\nOutput files:'
+    print '----------------------------------------------------\n'
     print ' - CAVA database: {}_cava.gz (+.tbi)'.format(options.output)
     print ' - GFF3 file: {}.gff'.format(options.output)
     print ' - GenePred file: {}.gp'.format(options.output)
+    print ' - FASTA file: {}.fa (+.fai)'.format(options.output)
+    if options.annovar:
+        print '\n - Annovar GenePred file: {}'.format('{}_refGene.txt'.format(options.output))
+        print ' - Annovar FASTA file: {} (+.fai)'.format('{}_refGeneMrna.fa'.format(options.output))
     if options.gbk:
-        print ' - GenBank file: {}.gbk.gz'.format(options.output)
-    print ' - FASTA file: {}.fa'.format(options.output)
-    print ' - Mapping source file: {}_source.txt'.format(options.output)
+        print '\n - GenBank (GBK) files: {}_gbk.zip'.format(options.output)
+
+    print '\n - Mapping source file: {}_source.txt'.format(options.output)
     print ' - Missing CARTs file: {}_missing.txt'.format(options.output)
+
+    print '\n----------------------------------------------------'

@@ -5,7 +5,7 @@ from optparse import OptionParser
 from cartwriter.main import main
 
 # Version
-ver = '0.2.0'
+ver = '0.3.0'
 
 # Command line argument parsing
 descr = 'CARTWriter v'+ver
@@ -15,10 +15,10 @@ parser.add_option('-n', default=None, dest='ncbi', action='store', help="RefSeqD
 parser.add_option('-u', default=None, dest='ucsc', action='store', help="RefSeqDB output file with UCSC mapping data")
 parser.add_option('-g', default=None, dest='hgnc', action='store', help="HGNC ID to Gene Symbol dictionary file")
 parser.add_option('-o', default='output', dest='output', action='store', help="Output file name prefix [default value: %default]")
-parser.add_option('-w', default=False, dest='gbk', action='store_true', help="Write GenBank (GBK) output [default value: %default]")
+parser.add_option('-w', default=False, dest='gbk', action='store_true', help="Create GBK output [default value: %default]")
 parser.add_option('-r', default=None, dest='ref', action='store', help="Reference genome file")
 parser.add_option('-s', default=None, dest='symbols', action='store', help="Txt file for specifying gene symbols for missing HGNC IDs")
-
+parser.add_option('-a', default=False, dest='annovar', action='store_true', help="Create GenePred and FASTA files for Annovar [default value: %default]")
 (options, args) = parser.parse_args()
 
 # Welcome message
@@ -31,5 +31,5 @@ main(ver, options)
 
 now = str(datetime.datetime.now())
 now = now[:now.find('.')]
-print '\nCARTWriter: {}'.format(now)
+print '\nCARTWriter finished: {}'.format(now)
 print '='*100 + '\n'

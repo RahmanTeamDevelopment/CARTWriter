@@ -5,6 +5,7 @@ import pysam
 import datetime
 import os
 
+
 allowed_chroms = map(str, range(1, 24)) + ['X', 'Y', 'MT']
 
 class TranscriptDBWriter(object):
@@ -161,13 +162,15 @@ def output_genepred(transcript, outfile):
     outfile.write('\t'.join(record) + '\n')
 
 
-def output_gbk(transcript, ref, outfile):
+def output_gbk(transcript, ref, dirname):
 
+    outfile = open('{}/{}_{}.gbk'.format(dirname, transcript.gene_symbol, transcript.id), 'w')
     full_dna = read_full_dna_sequence(transcript, ref)
     gbk_header(transcript, outfile, full_dna)
     gbk_features(transcript, outfile, ref)
     gbk_origin(outfile, full_dna)
     outfile.write('//\n')
+    outfile.close()
 
 
 def output_fasta(transcript, outfile, ref):
@@ -175,6 +178,16 @@ def output_fasta(transcript, outfile, ref):
     width = 70
     s = read_mrna_sequence(transcript, ref)
     outfile.write('>{}\n'.format(transcript.id))
+    while len(s)>0:
+        outfile.write(s[:width]+'\n')
+        s = s[width:]
+
+
+def output_fasta_annovar(transcript, outfile, ref):
+
+    width = 70
+    s = read_mrna_sequence(transcript, ref)
+    outfile.write('>{}#{}#{}\n'.format(transcript.id, transcript.chrom, str(transcript.start)))
     while len(s)>0:
         outfile.write(s[:width]+'\n')
         s = s[width:]
@@ -398,12 +411,14 @@ def check_for_missing_hgnc_ids(fn, db_ncbi, db_ucsc, genes_symbols, symbols):
             not_found.append(transcript.hgnc_id)
 
     if len(not_found) > 0:
+        print '----------------------------------------------------------------------------------------'
         print 'Oops. The following {} HGNC ID{} not found in HGNC BioMart file:'.format(len(not_found), ' is' if len(not_found) == 1 else 's are')
         for x in not_found:
             print '- {}'.format(x)
         print 'Use command line option -s to supply a txt file providing gene {}.'.format('symbol for this HGNC ID' if len(not_found) == 1 else 'symbols for these HGNC IDs')
-        print 'The txt file must have two columns: HGNC ID and gene symbol.\n'
-        print 'No outputs generated.\n'
+        print 'The txt file must have two columns: HGNC ID and gene symbol.'
+        print '----------------------------------------------------------------------------------------\n'
+        print 'No outputs generated!'
         print '=' * 100 + '\n'
         quit()
 
