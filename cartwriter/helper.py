@@ -166,6 +166,8 @@ def output_gbk(transcript, ref, dirname):
 
     outfile = open('{}/{}_{}.gbk'.format(dirname, transcript.gene_symbol, transcript.id), 'w')
     full_dna = read_full_dna_sequence(transcript, ref)
+    if transcript.strand == '-':
+        full_dna = reverse_complement(full_dna)
     gbk_header(transcript, outfile, full_dna)
     gbk_features(transcript, outfile, ref)
     gbk_origin(outfile, full_dna)
@@ -268,13 +270,14 @@ def feature_mrna(transcript, outfile):
 
     exon_strings = []
     for e in transcript.exons:
-        exon_start = e.start - transcript.start + 1
-        exon_end = e.end - transcript.start
-        exon_string = '{}..{}'.format(exon_start, exon_end)
         if transcript.strand == '+':
-            exon_strings.append(exon_string)
+            exon_start = e.start - transcript.start + 1
+            exon_end = e.end - transcript.start
         else:
-            exon_strings.append('complement({})'.format(exon_string))
+            exon_start = transcript.end - e.end + 1
+            exon_end = transcript.end - e.start
+        exon_string = '{}..{}'.format(exon_start, exon_end)
+        exon_strings.append(exon_string)
 
     if len(exon_strings) == 1:
         outfile.write('     mRNA            {}\n'.format(exon_strings[0]))
@@ -300,13 +303,14 @@ def feature_cds(transcript, outfile, ref):
 
     exon_strings = []
     for e in transcript.cds_regions():
-        exon_start = e[0] - transcript.start + 1
-        exon_end = e[1] - transcript.start
-        exon_string = '{}..{}'.format(exon_start, exon_end)
         if transcript.strand == '+':
-            exon_strings.append(exon_string)
+            exon_start = e[0] - transcript.start + 1
+            exon_end = e[1] - transcript.start
         else:
-            exon_strings.append('complement({})'.format(exon_string))
+            exon_start = transcript.end - e[1] + 1
+            exon_end = transcript.end - e[0]
+        exon_string = '{}..{}'.format(exon_start, exon_end)
+        exon_strings.append(exon_string)
 
     if len(exon_strings) == 1:
         outfile.write('     CDS             {}\n'.format(exon_strings[0]))
