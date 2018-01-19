@@ -82,14 +82,15 @@ def main(ver, options):
     helper.check_for_missing_hgnc_ids(options.input, db_ncbi, db_ucsc, genes_symbols, symbols)
 
     # Initializing output files
-    out_gff = open(options.output + '.gff', 'w')
-    out_gff.write('##gff-version 3\n')
     out_source = open(options.output + '_source.txt', 'w')
     out_source.write('#CARTID\trelated_NM\tsource_db\n')
     out_missing = open(options.output + '_missing.txt', 'w')
     out_missing.write('#CARTID\trelated_NM\treason_NCBI_db\treason_UCSC_db\n')
     out_genepred = open(options.output + '.gp', 'w')
     out_fasta = open(options.output + '.fa', 'w')
+
+    # Initialize gff3 content
+    gff3_lines = {}
 
     # Initializing output files required by Annovar
     if options.annovar:
@@ -159,8 +160,8 @@ def main(ver, options):
         # Adding to transcript database writer
         tdb_writer.add(transcript)
 
-        # Writing to gff file
-        helper.output_gff3(transcript, out_gff)
+        # Creating content of gff3 file
+        gff3_lines = helper.create_gff3_lines(transcript, gff3_lines)
 
         # Writing to gp file
         helper.output_genepred(transcript, out_genepred)
@@ -182,8 +183,10 @@ def main(ver, options):
     # Finalizing transcript database writer
     tdb_writer.finalize(options)
 
+    # Writing bgzipped, Tabix-index GFF3 output
+    helper.output_gff3(gff3_lines, options.output + '.gff')
+
     # Closing output files
-    out_gff.close()
     out_source.close()
     out_missing.close()
     out_fasta.close()
@@ -206,7 +209,7 @@ def main(ver, options):
     print '\nOutput files:'
     print '----------------------------------------------------\n'
     print ' - CAVA database: {}_cava.gz (+.tbi)'.format(options.output)
-    print ' - GFF3 file: {}.gff'.format(options.output)
+    print ' - GFF3 file: {}.gff.gz (+.tbi)'.format(options.output)
     print ' - GenePred file: {}.gp'.format(options.output)
     print ' - FASTA file: {}.fa (+.fai)'.format(options.output)
     if options.annovar:

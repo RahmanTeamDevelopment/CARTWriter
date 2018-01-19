@@ -5,7 +5,7 @@ from optparse import OptionParser
 from cartwriter.main import main
 
 # Version
-ver = '0.3.0'
+ver = '0.4.0'
 
 # Command line argument parsing
 descr = 'CARTWriter v'+ver

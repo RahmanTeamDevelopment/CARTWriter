@@ -103,17 +103,20 @@ class TranscriptDBWriter(object):
         os.remove(self._fn + '_tmp')
 
 
-def output_gff3(transcript, outfile):
+def create_gff3_lines(transcript, gff3_lines):
 
-    attr = ';'.join(['ID=' + transcript.id, 'HGNCID=' + transcript.hgnc_id, 'GENE_SYMBOL=' + transcript.gene_symbol])
-    outfile.write('\t'.join([transcript.chrom, '.', 'transcript', str(transcript.start + 1), str(transcript.end), '.', transcript.strand, '.', attr]) + '\n')
+    if transcript.chrom not in gff3_lines:
+        gff3_lines[transcript.chrom] = []
+
+    attr = ';'.join(['ID=' + transcript.id, 'hgnc_id=' + transcript.hgnc_id, 'gene_symbol=' + transcript.gene_symbol])
+    gff3_lines[transcript.chrom].append([transcript.chrom, '.', 'transcript', transcript.start + 1, transcript.end, '.', transcript.strand, '.', attr])
 
     # Exons
     for i in range(len(transcript.exons)):
         exon = transcript.exons[i]
         exon_id = 'EXON' + transcript.id[4:] + '.' + str(i + 1)
         attr = ';'.join(['ID=' + exon_id, 'Parent=' + transcript.id])
-        outfile.write('\t'.join([transcript.chrom, '.', 'exon', str(exon.start + 1), str(exon.end), '.', transcript.strand, '.', attr]) + '\n')
+        gff3_lines[transcript.chrom].append([transcript.chrom, '.', 'exon', exon.start + 1, exon.end, '.', transcript.strand, '.', attr])
 
     # CDS
     cds_regs = transcript.cds_regions()
@@ -131,8 +134,31 @@ def output_gff3(transcript, outfile):
         else:
             phase = 1
 
-        outfile.write('\t'.join([transcript.chrom, '.', 'CDS', str(cds_reg[0] + 1), str(cds_reg[1]), '.', transcript.strand, str(phase), attr]) + '\n')
+        gff3_lines[transcript.chrom].append([transcript.chrom, '.', 'CDS', cds_reg[0] + 1, cds_reg[1], '.', transcript.strand, str(phase), attr])
+
         cdspos += cds_reg[1] - cds_reg[0]
+
+    return gff3_lines
+
+
+def output_gff3(gff3_lines, fn):
+
+    out = open(fn + '_tmp', 'w')
+    out.write('##gff-version 3\n')
+    for c in map(str,range(1, 23))+['X', 'Y', 'MT']:
+        if c not in gff3_lines:
+            continue
+        gff3_lines[c] = sorted(gff3_lines[c], key=itemgetter(3, 4))
+
+        for x in gff3_lines[c]:
+            x = map(str, x)
+            out.write('\t'.join(x)+'\n')
+    out.close()
+
+    pysam.tabix_compress(fn + '_tmp', fn + '.gz', force=True)
+    pysam.tabix_index(fn + '.gz', seq_col=0, start_col=3, end_col=4, meta_char='#', force=True)
+
+    os.remove(fn + '_tmp')
 
 
 def output_genepred(transcript, outfile):
