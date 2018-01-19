@@ -415,11 +415,36 @@ def frame_offsets(transcript):
 
 def reverse_complement(dna_seq):
 
-    complement = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N", "a": "t", "t": "a", "c": "g", "g": "c", "n": "n"}
     ret = ''
     for base in dna_seq[::-1]:
-        ret += complement[base]
+        ret += complement(base)
     return ret
+
+
+def complement(b):
+
+    comps = {
+        "A": "T",
+        "T": "A",
+        "C": "G",
+        "G": "C",
+        "K": "M",
+        "M": "K",
+        "S": "S",
+        "W": "W",
+        "R": "Y",
+        "Y": "R",
+        "B": "V",
+        "D": "H",
+        "H": "D",
+        "V": "B",
+        "N": "N",
+    }
+    if b in comps:
+        return comps[b]
+    elif b.upper() in comps:
+        x = comps[b.upper()]
+        return x.lower()
 
 
 def check_for_missing_hgnc_ids(fn, db_ncbi, db_ucsc, genes_symbols, symbols):
