@@ -108,7 +108,7 @@ def create_gff3_lines(transcript, gff3_lines):
     if transcript.chrom not in gff3_lines:
         gff3_lines[transcript.chrom] = []
 
-    attr = ';'.join(['ID=' + transcript.id, 'hgnc_id=' + transcript.hgnc_id, 'gene_symbol=' + transcript.gene_symbol])
+    attr = ';'.join(['ID=' + transcript.id, 'hgnc_id=' + transcript.hgnc_id, 'gene_symbol=' + transcript.gene_symbol, 'biotype=protein_coding'])
     gff3_lines[transcript.chrom].append([transcript.chrom, '.', 'transcript', transcript.start + 1, transcript.end, '.', transcript.strand, '.', attr])
 
     # Exons
