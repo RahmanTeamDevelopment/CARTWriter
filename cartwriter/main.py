@@ -64,7 +64,7 @@ def main(ver, options):
 
     # Initializing transcript database writer
     columns = ['ID', 'HGNC_ID', 'GENE_SYMBOL', 'INFO', 'STRAND', 'CHROM', 'START', 'END', 'EXONS', 'CODING_START', 'CODING_END', 'CDNA_CODING_START', 'CDNA_CODING_END']
-    tdb_writer = helper.TranscriptDBWriter(options.output+'_cava', source='CARTdb ' + ver, build='GRCh37', columns=columns)
+    tdb_writer = helper.TranscriptDBWriter(options.output+'_cava', source='CARTWriter ' + ver, build='GRCh37', columns=columns)
 
     # Reading NCBI database
     db_ncbi = TranscriptDB(options.ncbi)
